@@ -1,6 +1,13 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
+import { provideRouter, Routes } from '@angular/router';
 import { AppComponent } from './app/app.component';
+import { SoaPdfComponent } from './app/soa-pdf/soa-pdf.component';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+const routes: Routes = [
+  { path: 'soa', component: SoaPdfComponent },
+  { path: '', redirectTo: 'soa', pathMatch: 'full' }
+];
+
+bootstrapApplication(AppComponent, {
+  providers: [provideRouter(routes)]
+});
