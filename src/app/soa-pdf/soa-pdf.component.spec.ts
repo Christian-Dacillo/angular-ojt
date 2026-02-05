@@ -94,24 +94,26 @@ describe('SoaPdfComponent', () => {
     component.soaData = mockSoa;
     const table = component.createSoaTable();
 
-    // Check headers
     expect(table.table.body[0][0].text).toBe('CODE');
     expect(table.table.body[0][1].text).toBe('PARTICULARS');
     expect(table.table.body[0][2].text).toBe('TOTAL');
 
-    // Check section titles
     expect(table.table.body.some((row: { text: string; }[]) => row[0]?.text === 'FOR LICENSES')).toBeTrue();
     expect(table.table.body.some((row: { text: string; }[]) => row[0]?.text === 'FOR PERMITS')).toBeTrue();
     expect(table.table.body.some((row: { text: string; }[]) => row[0]?.text === 'FOR AMATEUR AND ROC')).toBeTrue();
     expect(table.table.body.some((row: { text: string; }[]) => row[0]?.text === 'OTHER APPLICATION')).toBeTrue();
 
-    // Check some sample bills
     expect(table.table.body.some((row: string[]) => row[1] === 'Permit to Purchase')).toBeTrue();
     expect(table.table.body.some((row: string[]) => row[1] === 'Filing Fee')).toBeTrue();
     expect(table.table.body.some((row: string[]) => row[1] === 'Inspection Fee')).toBeTrue();
     expect(table.table.body.some((row: string[]) => row[1] === 'Documentary Stamp Tax (DST)')).toBeTrue();
 
-    // Check total amount exists
     expect(table.table.body.some((row: { text: string; }[]) => row[0]?.text === 'TOTAL AMOUNT')).toBeTrue();
+
+    
+    const totalRow = table.table.body
+      .find((row: any[]) => row[0]?.text === 'TOTAL AMOUNT');
+
+    expect(totalRow[2].text).toBe('4,072.00');
   });
 });
