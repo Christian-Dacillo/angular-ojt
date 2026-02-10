@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { SoaService, Soa, SoaSection } from '../services/soa.service';
+import { AccessSOAPayload, Soa } from '../models/soa.model';
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// fonts
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 @Component({
@@ -11,7 +11,7 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
   standalone: true,
   template: `
     <div class="container">
-      <button class="generate-btn" (click)="generatePDF()">
+      <button class="generate-btn" (click)="generatePDF(mockSoa)">
         Generate SOA PDF
       </button>
     </div>
@@ -19,11 +19,11 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
   styles: [`
     .container {
       display: flex;
-      justify-content: center; 
-      align-items: center;     
-      height: 98vh;          
-      width: 98vw;            
-      background-color: #FEFAF6; 
+      justify-content: center;
+      align-items: center;
+      height: 98vh;
+      width: 98vw;
+      background-color: #FEFAF6;
     }
 
     .generate-btn {
@@ -35,49 +35,106 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
       font-weight: 600;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s ease;
     }
 
     .generate-btn:hover {
       background-color: #59AC77;
     }
-
-    .generate-btn:active {
-      transform: scale(0.98);
-    }
   `]
 })
 export class SoaPdfComponent {
-  soaData!: Soa;
 
-  constructor(private soaService: SoaService) { }
-
-  generatePDF(): void {
-    this.soaService.getSoaDetails().subscribe(data => {
-      this.soaData = data;
-
-      const docDefinition: any = {
-        pageSize: 'A4',
-        pageOrientation: 'landscape',
-        pageMargins: [8, 8, 8, 8],
-        content: [
-          {
-            columns: [
-              this.soaColumn('Servicing Unit Copy'),
-              this.soaColumn('Accounting Unit Copy'),
-              this.soaColumn('COA Copy'),
-              this.soaColumn('Cash Unit Copy')
-            ],
-            columnGap: 4
-          }
+  mockSoa: Soa = {
+    soaNo: 'MOCK-001',
+    date: 'Mock Date',
+    name: 'Mock User',
+    address: 'Mock Address',
+    type: 'New',
+    particulars: 'Mock Particulars',
+    periodCovered: '2026',
+    sections: [
+      {
+        title: 'FOR LICENSES', rows: [
+          ['Permit to Purchase', 384],
+          ['Filing Fee', 720],
+          ['Permit to Possess / Storage', 240],
+          ['Construction Permit Fee', 0],
+          ['Radio Station License', 0],
+          ['Inspection Fee', 2640],
+          ['Spectrum User’s Fee (SUF)', 88],
+          ['Surcharges', 0],
+          ['Fines and Penalties', 0]
         ]
-      };
+      },
+      {
+        title: 'FOR PERMITS', rows: [
+          ['Permit (Dealer / Reseller / Service Center)', 0],
+          ['Inspection Fee', 0],
+          ['Filing Fee', 0],
+          ['Surcharges', 0]
+        ]
+      },
+      {
+        title: 'FOR AMATEUR AND ROC', rows: [
+          ['Radio Station License', 0],
+          ['Radio Operator’s Certificate', 0],
+          ['Application Fee', 0],
+          ['Filing Fee', 0],
+          ['Seminar Fee', 0],
+          ['Surcharges', 0]
+        ]
+      },
+      {
+        title: 'OTHER APPLICATION', rows: [
+          ['Registration Fee', 0],
+          ['Supervision Regulation Fee', 0],
+          ['Verification / Authentication Fee', 0],
+          ['Examination Fee', 0],
+          ['Clearance / Certification Fee (Special)', 0],
+          ['Modification Fee', 0],
+          ['Miscellaneous Income', 0],
+          ['Documentary Stamp Tax (DST)', 120],
+          ['Others', 0]
+        ]
+      }
+    ]
+  };
 
-      pdfMake.createPdf(docDefinition).open();
-    });
+  generatePDF(soa: Soa): void {
+    const docDefinition: any = {
+      pageSize: 'A4',
+      pageOrientation: 'landscape',
+      pageMargins: [2.5, 2.5, 2.5, 2.5], // max page space
+      content: [
+        {
+          columns: [
+            this.soaColumn('Servicing Unit Copy', soa),
+            this.soaColumn('Accounting Unit Copy', soa),
+            this.soaColumn('COA Copy', soa),
+            this.soaColumn('Cash Unit Copy', soa)
+          ],
+          columnGap: 1
+        }
+      ],
+      pageBreakBefore: () => false
+    };
+
+    pdfMake.createPdf(docDefinition).open();
   }
 
-  createSoaTable(): any {
+  checkBox(checked: boolean = false): any {
+    return {
+      canvas: [
+        { type: 'rect', x: 0, y: 0, w: 5.5, h: 5.5, lineWidth: 0.5 },
+        ...(checked ? [
+          { type: 'line', x1: 1, y1: 3, x2: 2.5, y2: 5, lineWidth: 1 },
+          { type: 'line', x1: 2.5, y1: 5, x2: 4.5, y2: 1, lineWidth: 1 }
+        ] : [])
+      ]
+    };
+  }
+
+  createSoaTable(soa: Soa): any {
     const body: any[] = [
       [
         { text: 'CODE', bold: true },
@@ -86,105 +143,85 @@ export class SoaPdfComponent {
       ]
     ];
 
-    this.soaData.sections.forEach((section: SoaSection) => {
-      body.push([{ text: section.title, colSpan: 3, bold: true }, {}, {}]);
+    soa.sections.forEach(section => {
+      body.push([
+        { text: section.title, colSpan: 3, bold: true, fontSize: 6 },
+        {},
+        {}
+      ]);
+
       section.rows.forEach(row => {
         body.push([
           '',
-          row[0],
-          {
-            text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }),
-            alignment: 'right'
-          }
+          { text: row[0], fontSize: 6 },
+          { text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }), alignment: 'right', fontSize: 6 }
         ]);
       });
     });
 
-    const totalAmount = this.soaData.sections
-      .flatMap(sec => sec.rows)
-      .reduce((sum, r) => sum + r[1], 0);
-
-    body.push([
-      { text: 'TOTAL AMOUNT', colSpan: 2, bold: true, alignment: 'right' },
-      {},
-      {
-        text: totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        bold: true,
-        alignment: 'right'
-      }
-    ]);
-
     return {
-      table: { widths: [18, '*', 48], body },
-      fontSize: 6.8,
-      layout: {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        paddingLeft: () => 3,
-        paddingRight: () => 3,
-        paddingTop: () => 1.8,
-        paddingBottom: () => 1.8
-      }
+      table: { widths: [22, '*', 58], body },
+      fontSize: 5.9,
+      margin: [0, 0.5, 0, 0.5]
     };
   }
 
-  soaColumn(label: string): any {
+  soaColumn(label: string, soa: Soa): any {
+    const soaTypes: Record<string, boolean> = {
+      New: soa.type === 'New',
+      Ren: soa.type === 'Ren',
+      ECO: soa.type === 'ECO',
+      CV: soa.type === 'CV',
+      MOD: soa.type === 'MOD',
+      ROC: soa.type === 'ROC'
+    };
+
     return {
-      width: '25%',
+      width: '24.8%',
       stack: [
-        { text: 'NATIONAL TELECOMMUNICATIONS COMMISSION', bold: true, fontSize: 7.8, alignment: 'center' },
-        { text: 'Statement of Account', fontSize: 7, alignment: 'center' },
+        { text: 'NATIONAL TELECOMMUNICATIONS COMMISSION', bold: true, fontSize: 7.1, alignment: 'center', margin: [0, 0, 0, 0.3] },
+        { text: 'Statement of Account', fontSize: 6.5, alignment: 'center', margin: [0, 0, 0, 0.3] },
+        { text: label, italics: true, fontSize: 6.2, alignment: 'center', margin: [0, 0, 0, 0.6] },
 
-        { text: label, italics: true, fontSize: 6.8, alignment: 'center', margin: [0, 0, 0, 3] },
-
-        { text: `Date        : ${this.soaData.date}`, fontSize: 6.8 },
-        { text: `No.          : ${this.soaData.soaNo}`, fontSize: 6.8 },
-        { text: `Name     : ${this.soaData.name}`, fontSize: 6.8 },
-        { text: `Address : ${this.soaData.address}`, fontSize: 6.8 },
-
-        {
-          columns: [
-            this.checkBox(), { text: 'New', fontSize: 6 },
-            this.checkBox(), { text: 'Ren', fontSize: 6 },
-            this.checkBox(), { text: 'ECO', fontSize: 6 },
-            this.checkBox(), { text: 'CV', fontSize: 6 },
-            this.checkBox(), { text: 'MOD', fontSize: 6 },
-            this.checkBox(), { text: 'ROC', fontSize: 6 },
-          ],
-          columnGap: 6,
-          margin: [0, 2, 0, 2]
-        },
+        { text: `Date:         ${soa.date ?? ''}`, fontSize: 6.2, margin: [0, 0, 0, 0.2] },
+        { text: `No.:           ${soa.soaNo ?? ''}`, fontSize: 6.2, margin: [0, 0, 0, 0.2] },
+        { text: `Name:      ${soa.name ?? ''}`, fontSize: 6.2, margin: [0, 0, 0, 0.2] },
+        { text: `Address:  ${soa.address ?? ''}`, fontSize: 6.2, margin: [0, 0, 0, 0.2] },
 
         {
           columns: [
-            { text: 'Particulars:', fontSize: 6.8, width: 34 },
-            {
-              canvas: [
-                {
-                  type: 'rect',
-                  x: 0,
-                  y: 0,
-                  w: 150,
-                  h: 10,
-                  lineWidth: 0.6
-                }
-              ]
-            }
+            { columns: [this.checkBox(soaTypes['New']), { text: 'New', fontSize: 5.6 }], columnGap: 1.5 },
+            { columns: [this.checkBox(soaTypes['Ren']), { text: 'Ren', fontSize: 5.6 }], columnGap: 1.5 },
+            { columns: [this.checkBox(soaTypes['ECO']), { text: 'ECO', fontSize: 5.6 }], columnGap: 1.5 },
+            { columns: [this.checkBox(soaTypes['CV']), { text: 'CV', fontSize: 5.6 }], columnGap: 1.5 },
+            { columns: [this.checkBox(soaTypes['MOD']), { text: 'MOD', fontSize: 5.6 }], columnGap: 1.5 },
+            { columns: [this.checkBox(soaTypes['ROC']), { text: 'ROC', fontSize: 5.6 }], columnGap: 1.5 }
           ],
           columnGap: 4,
-          margin: [0, 0, 0, 2]
+          margin: [0, 0.6, 0, 0.6]
         },
 
-        this.createSoaTable(),
-
-        { text: 'NOTE: To be paid on or before the due date otherwise subject to reassessment.', fontSize: 6, margin: [0, 3, 0, 0] },
+        { text: `Particulars: ${soa.particulars}`, fontSize: 6.6, margin: [0, 0, 0, 1] },
 
         {
           columns: [
-            { columns: [this.checkBox(), { text: 'For Assessment Only', fontSize: 6 }], columnGap: 4 },
-            { columns: [this.checkBox(), { text: 'Endorsed for Payment', fontSize: 6 }], columnGap: 4 }
+            { text: 'Particulars:', fontSize: 6.3, width: 28 },
+            { canvas: [{ type: 'rect', x: 0, y: 0, w: 130, h: 7, lineWidth: 0.6 }] }
           ],
-          margin: [0, 3, 0, 0]
+          columnGap: 3,
+          margin: [0, 0, 0, 1]
+        },
+
+        this.createSoaTable(soa),
+
+        { text: 'NOTE: To be paid on or before the due date otherwise subject to reassessment.', fontSize: 5.6, margin: [0, 1, 0, 0] },
+
+        {
+          columns: [
+            { columns: [this.checkBox(), { text: 'For Assessment Only', fontSize: 5.6, margin: [0, -0.2, 0, 0] }], columnGap: 0.6 },
+            { columns: [this.checkBox(), { text: 'Endorsed for Payment', fontSize: 5.6, margin: [0, -0.2, 0, 0] }], columnGap: 0.6 }
+          ],
+          margin: [0, 0.4, 0, 0]
         },
 
         {
@@ -192,43 +229,29 @@ export class SoaPdfComponent {
             {
               width: '50%',
               stack: [
-                { text: 'PREPARED BY:', bold: true, fontSize: 6.5, margin: [0, 3, 0, 1] },
-                { text: 'Engr. Ryan J. dela Cruz', bold: true, fontSize: 6.5, margin: [0, 7.9, 0, 0] },
-                { text: 'Administrative Division', fontSize: 6, margin: [0, 0, 0, 0] },
-                { text: 'Over Printed Name & Signature', italics: true, fontSize: 5.5 }
+                { text: 'PREPARED BY:', bold: true, fontSize: 6.1, margin: [0, 1, 0, 0] },
+                { text: 'Engr. Ryan J. dela Cruz', bold: true, fontSize: 6.0, margin: [0, 3, 0, 0] },
+                { text: 'Administrative Division', fontSize: 5.7 },
+                { text: 'Over Printed Name & Signature', italics: true, fontSize: 5.3 }
               ]
             },
             {
               width: '50%',
               stack: [
-                { text: 'APPROVED BY:', bold: true, fontSize: 6.5, margin: [0, 3, 0, 1] },
-                { text: 'Engr. Gerald Villoso', bold: true, fontSize: 6.5, margin: [0, 7.9, 0, 0] },
-                { text: 'Administrative Division', fontSize: 6, margin: [0, 0, 0, 0] },
-                { text: 'Over Printed Name & Signature', italics: true, fontSize: 5.5 }
+                { text: 'APPROVED BY:', bold: true, fontSize: 6.1, margin: [0, 1, 0, 0] },
+                { text: 'Engr. Gerald Villoso', bold: true, fontSize: 6.0, margin: [0, 3, 0, 0] },
+                { text: 'Administrative Division', fontSize: 5.7 },
+                { text: 'Over Printed Name & Signature', italics: true, fontSize: 5.3 }
               ]
             }
           ],
-          columnGap: 6,
-          margin: [0, 3, 0, 0]
-        }
-      ]
-    };
-  }
+          columnGap: 10,
+          margin: [0, 0.6, 0, 0]
+        },
 
-  checkBox(): any {
-    return {
-      canvas: [
-        {
-          type: 'rect',
-          x: 0,
-          y: 0,
-          w: 6,
-          h: 6,
-          lineWidth: 0.7
-        }
-      ],
-      width: 4,
-      height: 8
+        // filler to eliminate bottom space
+        { text: '', margin: [0, 2, 0, 0] }
+      ]
     };
   }
 }
