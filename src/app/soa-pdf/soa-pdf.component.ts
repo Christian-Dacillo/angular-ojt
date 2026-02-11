@@ -11,7 +11,7 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
   standalone: true,
   template: `
     <div class="container">
-      <button class="generate-btn" (click)="generatePDF(mockSoa)">
+      <button class="generate-btn" (click)="generatePDF(soaData)">
         Generate SOA PDF
       </button>
     </div>
@@ -44,67 +44,38 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 })
 export class SoaPdfComponent {
 
-  mockSoa: Soa = {
-    soaNo: 'MOCK-001',
-    date: 'Mock Date',
-    name: 'Mock User',
-    address: 'Mock Address',
-    type: 'New',
-    particulars: 'Mock Particulars',
-    periodCovered: '2026',
-    sections: [
-      {
-        title: 'FOR LICENSES', rows: [
-          ['Permit to Purchase', 384],
-          ['Filing Fee', 720],
-          ['Permit to Possess / Storage', 240],
-          ['Construction Permit Fee', 0],
-          ['Radio Station License', 0],
-          ['Inspection Fee', 2640],
-          ['Spectrum User’s Fee (SUF)', 88],
-          ['Surcharges', 0],
-          ['Fines and Penalties', 0]
-        ]
-      },
-      {
-        title: 'FOR PERMITS', rows: [
-          ['Permit (Dealer / Reseller / Service Center)', 0],
-          ['Inspection Fee', 0],
-          ['Filing Fee', 0],
-          ['Surcharges', 0]
-        ]
-      },
-      {
-        title: 'FOR AMATEUR AND ROC', rows: [
-          ['Radio Station License', 0],
-          ['Radio Operator’s Certificate', 0],
-          ['Application Fee', 0],
-          ['Filing Fee', 0],
-          ['Seminar Fee', 0],
-          ['Surcharges', 0]
-        ]
-      },
-      {
-        title: 'OTHER APPLICATION', rows: [
-          ['Registration Fee', 0],
-          ['Supervision Regulation Fee', 0],
-          ['Verification / Authentication Fee', 0],
-          ['Examination Fee', 0],
-          ['Clearance / Certification Fee (Special)', 0],
-          ['Modification Fee', 0],
-          ['Miscellaneous Income', 0],
-          ['Documentary Stamp Tax (DST)', 120],
-          ['Others', 0]
-        ]
-      }
-    ]
-  };
+  // ✅ READY TO RECEIVE REAL DATA (no mock data)
+  soaData!: Soa;
+
+  constructor() {
+
+    this.loadSoaData();
+  }
+
+  loadSoaData() {
+  
+    this.soaData = {
+      soaNo: '',
+      date: '',
+      name: '',
+      address: '',
+      type: '',
+      particulars: '',
+      periodCovered: '',
+      sections: []  
+    };
+  }
 
   generatePDF(soa: Soa): void {
+    if (!soa) {
+      alert('No SOA data available!');
+      return;
+    }
+
     const docDefinition: any = {
       pageSize: 'A4',
       pageOrientation: 'landscape',
-      pageMargins: [2.5, 2.5, 2.5, 2.5], // max page space
+      pageMargins: [2.5, 2.5, 2.5, 2.5],
       content: [
         {
           columns: [
@@ -143,7 +114,7 @@ export class SoaPdfComponent {
       ]
     ];
 
-    soa.sections.forEach(section => {
+    soa.sections?.forEach(section => {
       body.push([
         { text: section.title, colSpan: 3, bold: true, fontSize: 6 },
         {},
@@ -154,7 +125,11 @@ export class SoaPdfComponent {
         body.push([
           '',
           { text: row[0], fontSize: 6 },
-          { text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }), alignment: 'right', fontSize: 6 }
+          {
+            text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }),
+            alignment: 'right',
+            fontSize: 6
+          }
         ]);
       });
     });
@@ -166,6 +141,7 @@ export class SoaPdfComponent {
     };
   }
 
+  // ✅ YOU ASKED TO FOLLOW THIS FORMAT — KEPT AS REQUESTED
   soaColumn(label: string, soa: Soa): any {
     const soaTypes: Record<string, boolean> = {
       New: soa.type === 'New',
@@ -201,7 +177,7 @@ export class SoaPdfComponent {
           margin: [0, 0.6, 0, 0.6]
         },
 
-        { text: `Particulars: ${soa.particulars}`, fontSize: 6.6, margin: [0, 0, 0, 1] },
+        { text: `Particulars: ${soa.particulars ?? ''}`, fontSize: 6.6, margin: [0, 0, 0, 1] },
 
         {
           columns: [
@@ -249,7 +225,6 @@ export class SoaPdfComponent {
           margin: [0, 0.6, 0, 0]
         },
 
-        // filler to eliminate bottom space
         { text: '', margin: [0, 2, 0, 0] }
       ]
     };
