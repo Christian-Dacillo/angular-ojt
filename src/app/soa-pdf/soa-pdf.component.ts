@@ -59,10 +59,59 @@ export class SoaPdfComponent {
       date: '',
       name: '',
       address: '',
-      type: '',
+      type: 'New',
       particulars: '',
       periodCovered: '',
-      sections: []  
+      sections: [
+        {
+          title: 'FOR LICENSES',
+          rows: [
+            ['Permit to Purchase', 384],
+            ['Filing Fee', 720],
+            ['Permit to Possess / Storage', 240],
+            ['Construction Permit Fee', 0],
+            ['Radio Station License', 0],
+            ['Inspection Fee', 2640],
+            ['Spectrum User’s Fee (SUF)', 88],
+            ['Surcharges', 0],
+            ['Fines and Penalties', 0]
+          ]
+        },
+        {
+          title: 'FOR PERMITS',
+          rows: [
+            ['Permit (Dealer / Reseller / Service Center)', 0],
+            ['Inspection Fee', 0],
+            ['Filing Fee', 0],
+            ['Surcharges', 0]
+          ]
+        },
+        {
+          title: 'FOR AMATEUR AND ROC',
+          rows: [
+            ['Radio Station License', 0],
+            ['Radio Operator’s Certificate', 0],
+            ['Application Fee', 0],
+            ['Filing Fee', 0],
+            ['Seminar Fee', 0],
+            ['Surcharges', 0]
+          ]
+        },
+        {
+          title: 'OTHER APPLICATION',
+          rows: [
+            ['Registration Fee', 0],
+            ['Supervision Regulation Fee', 0],
+            ['Verification / Authentication Fee', 0],
+            ['Examination Fee', 0],
+            ['Clearance / Certification Fee (Special)', 0],
+            ['Modification Fee', 0],
+            ['Miscellaneous Income', 0],
+            ['Documentary Stamp Tax (DST)', 120],
+            ['Others', 0]
+          ]
+        }
+      ]
     };
   }
 
