@@ -1,19 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { AccessSOAPayload, Soa } from '../models/soa.model';
 
 import pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 @Component({
   selector: 'app-soa-pdf',
   standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA], // ✅ allow <app-assessment-pdf>
   template: `
     <div class="container">
+      <!-- ORIGINAL SOA PDF Button -->
       <button class="generate-btn" (click)="generatePDF(soaData)">
         Generate SOA PDF
       </button>
+
+      <!-- NEW ASSESSMENT PDF Button -->
+      <button class="generate-btn" (click)="exportAssessmentPDF()">
+        Generate Assessment PDF
+      </button>
+    </div>
+
+    <!-- Hidden Assessment Area (no longer used, but kept for reference) -->
+    <div #assessmentArea style="position: absolute; left: -9999px;">
+      <app-assessment-pdf></app-assessment-pdf>
     </div>
   `,
   styles: [`
@@ -21,6 +35,7 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
       display: flex;
       justify-content: center;
       align-items: center;
+      gap: 10px;
       height: 98vh;
       width: 98vw;
       background-color: #FEFAF6;
@@ -44,16 +59,16 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 })
 export class SoaPdfComponent {
 
-  // ✅ READY TO RECEIVE REAL DATA (no mock data)
+  @ViewChild('assessmentArea', { static: true }) assessmentArea!: ElementRef<HTMLElement>;
+
+  // ✅ ORIGINAL SOA DATA
   soaData!: Soa;
 
   constructor() {
-
     this.loadSoaData();
   }
 
   loadSoaData() {
-  
     this.soaData = {
       soaNo: '',
       date: '',
@@ -115,6 +130,9 @@ export class SoaPdfComponent {
     };
   }
 
+  // -------------------------
+  // ORIGINAL SOA PDF METHOD (UNCHANGED)
+  // -------------------------
   generatePDF(soa: Soa): void {
     if (!soa) {
       alert('No SOA data available!');
@@ -142,6 +160,9 @@ export class SoaPdfComponent {
     pdfMake.createPdf(docDefinition).open();
   }
 
+  // -------------------------
+  // ORIGINAL FUNCTIONS (checkBox, createSoaTable, soaColumn)
+  // -------------------------
   checkBox(checked: boolean = false): any {
     return {
       canvas: [
@@ -164,33 +185,19 @@ export class SoaPdfComponent {
     ];
 
     soa.sections?.forEach(section => {
-      body.push([
-        { text: section.title, colSpan: 3, bold: true, fontSize: 6 },
-        {},
-        {}
-      ]);
-
-      section.rows.forEach(row => {
+      body.push([{ text: section.title, colSpan: 3, bold: true, fontSize: 6 }, {}, {}]);
+      section.rows.forEach(row =>
         body.push([
           '',
           { text: row[0], fontSize: 6 },
-          {
-            text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }),
-            alignment: 'right',
-            fontSize: 6
-          }
-        ]);
-      });
+          { text: row[1].toLocaleString('en-US', { minimumFractionDigits: 2 }), alignment: 'right', fontSize: 6 }
+        ])
+      );
     });
 
-    return {
-      table: { widths: [22, '*', 58], body },
-      fontSize: 5.9,
-      margin: [0, 0.5, 0, 0.5]
-    };
+    return { table: { widths: [22, '*', 58], body }, fontSize: 5.9, margin: [0, 0.5, 0, 0.5] };
   }
 
-  // ✅ YOU ASKED TO FOLLOW THIS FORMAT — KEPT AS REQUESTED
   soaColumn(label: string, soa: Soa): any {
     const soaTypes: Record<string, boolean> = {
       New: soa.type === 'New',
@@ -278,4 +285,14 @@ export class SoaPdfComponent {
       ]
     };
   }
+
+  // -------------------------
+  // UPDATED ASSESSMENT PDF METHOD
+  // -------------------------
+  exportAssessmentPDF(): void {
+    const win = window.open('/assets/soa-assess/assessment-pdf.component.html', '_blank');
+    if (!win) alert('Popup blocked. Allow popups for this site.');
+  }
+
+
 }
